@@ -1,29 +1,28 @@
-#include <raylib.h>
-#include <math.h>
-#include <string.h>
-#include <csoundlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <raylib.h>
+#include <csoundlib.h>
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
 
 /* each segment of plot is (PLOT_WIDTH) / (SEGMENT_WIDTH * MAX_VALUES) */
 
 #define PLOT_HEIGHT    450   
 #define PLOT_WIDTH     1000   
-#define RECT_WIDTH     4
+#define RECT_WIDTH     5
 #define SEGMENT_WIDTH  (RECT_WIDTH+1)
 #define MAX_VALUES     (PLOT_WIDTH / SEGMENT_WIDTH)   
 #define FFT_LEN        1024
 
+Color PLOT_BLUE = SKYBLUE;
+Color PLOT_MAGENTA = (Color){.a = 255, .b = 150, .r = 150, .g = 75};
+Color PLOT_VIOLET = VIOLET;
+Color PLOT_GREEN = (Color){.a = 255, .b = 100, .r = 50, .g = 175};
+Color PLOT_YELLOW = (Color){.a = 255, .b = 50, .r = 175, .g = 150};
 
 float RMS = 0.0;
-Color DEFAULT_COLOR = SKYBLUE;
 double FFTG_BUFFER[FFT_LEN];
-
-int saturate_int(int val, int max, int min) 
-{
-    if (val > max) return max; 
-    else if (val < min) return min;
-    else return val;
-}
 
 double get_mag(double real, double imag) 
 {
@@ -35,11 +34,19 @@ double get_log(double val)
     return log10f((float)val);
 }
 
-Color get_color_from_fft_value(double val)
+int saturate_int(int val, int max, int min) 
 {
-    Color color = DEFAULT_COLOR;
-    color.r = saturate_int(color.r + val*20, 255, 0);
-    color.g = saturate_int(color.g - val*20, 255, 0);
+    if (val > max) return max; 
+    else if (val < min) return min;
+    else return val;
+}
+
+Color get_color_from_fft_value(double val, Color default_color)
+{
+    Color color = default_color;
+    color.r = saturate_int(color.r + val*10, 255, 0);
+    color.g = saturate_int(color.g + val*20, 255, 0);
+    color.b = saturate_int(color.b + val*10, 255, 0);
     return color;
 }
 
@@ -68,7 +75,7 @@ void master_output_vu(int trackId,
     {
         for (int i = 0; i < FFT_LEN; i++)
         {
-            fftr_buffer[i] = get_log(get_mag(fftc_buffer[i*2], fftc_buffer[i*2 + 1]));
+            fftr_buffer[i] = powf(get_log(get_mag(fftc_buffer[i*2], fftc_buffer[i*2 + 1])), 2);
         }
         memcpy(FFTG_BUFFER, fftr_buffer, FFT_LEN * sizeof(double));
     }
@@ -103,6 +110,9 @@ int main(void)
     float time_elapsed = 0;          // Time elapsed for adding values
     int total_values = 0;            // Total number of values generated
     bool show_settings = false;
+    int dropdownboxactive = 0;
+    bool active = false;
+    Color default_background_color = SKYBLUE;
 
     Font custom_font = LoadFont("./Inria_Sans/InriaSans-Regular.ttf");
 
@@ -114,7 +124,7 @@ int main(void)
         if (time_elapsed > 0.001f) // Add a new value every N seconds
         {
             time_elapsed = 0;
-            amp_values[current_index] = 1000 * RMS; 
+            amp_values[current_index] = 1500 * RMS; 
             memcpy(spec_values[current_index], FFTG_BUFFER, FFT_LEN);
 
             current_index = (current_index + 1) % MAX_VALUES; // Loop around if we reach the max
@@ -123,15 +133,20 @@ int main(void)
 
         if (IsKeyPressed(KEY_S))
         {
-            show_settings = true;
+            show_settings = !show_settings;
         }
-        if (IsKeyPressed(KEY_ENTER))
+        switch(dropdownboxactive)
         {
-            show_settings = false;
+            case 0: default_background_color = PLOT_BLUE; break;
+            case 1: default_background_color = PLOT_MAGENTA; break;
+            case 2: default_background_color = PLOT_VIOLET; break;
+            case 3: default_background_color = PLOT_GREEN; break;
+            case 4: default_background_color = PLOT_YELLOW; break;
+            default: default_background_color = SKYBLUE; 
         }
 
         BeginDrawing();
-        ClearBackground(DEFAULT_COLOR);
+        ClearBackground(default_background_color);
 
         /* draw audio visualization */
         for (int i = 0; i < MAX_VALUES; i++)
@@ -142,10 +157,18 @@ int main(void)
             int y = PLOT_HEIGHT / 2 - rectHeight / 2; 
             for (int i = 0; i < FFT_LEN; i++) 
             {
-                DrawRectangle(x, (PLOT_HEIGHT) - i*4, SEGMENT_WIDTH, 4, get_color_from_fft_value(spec_values[index][i]));
+                DrawRectangle(x, (PLOT_HEIGHT) - i*4, SEGMENT_WIDTH, 4, get_color_from_fft_value(spec_values[index][i], default_background_color));
             }
-            Color rec_col = DARKGRAY;
-            rec_col.a = 100;
+            Color rec_col;
+            if (memcmp(&default_background_color, &SKYBLUE, sizeof(Color)) == 0)
+            {
+                rec_col = DARKGRAY;
+            }
+            else 
+            {
+                rec_col = LIGHTGRAY;
+            }
+            rec_col.a = 150;
             DrawRectangle(x, y, RECT_WIDTH, rectHeight, rec_col);
         }
 
@@ -157,8 +180,13 @@ int main(void)
         else 
         {
             Color settings_color = (Color){.r = DARKGRAY.r, .g = DARKGRAY.g, .b = DARKGRAY.b, 150};
-            DrawRectangle(35, 35, 250, 300, settings_color);
-            DrawTextEx(custom_font, "Settings", (Vector2){125 + 5, 35+10}, 15, 2, BLACK);
+            DrawRectangle(35, 35, 400, PLOT_HEIGHT - 40 - 35, settings_color);
+            DrawTextEx(custom_font, "Settings", (Vector2){125+65, 35+10}, 20, 2, BLACK);
+
+            if (GuiDropdownBox((Rectangle){35+35, 35+65, 150, 40}, "SKY BLUE;MAGENTA;VIOLET;GREEN;YELLOW", &dropdownboxactive, active))
+            {
+                active = !active;
+            }
         }
         EndDrawing();
     }

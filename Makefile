@@ -25,7 +25,6 @@ all: $(TARGET)
 # Build target
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
-	install_name_tool -add_rpath /usr/local/lib ./out
 
 # Clean target
 clean:

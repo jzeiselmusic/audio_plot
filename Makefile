@@ -11,7 +11,7 @@ SRC = main.c
 TARGET = out
 
 # Library directories and libraries
-LIBS = -L/usr/local/lib -lcsoundlib -lsoundio -lraylib -framework CoreAudio
+LIBS = -L/usr/local/lib -lraylib /usr/local/lib/libcsoundlib.dylib
 
 # Compiler flags
 CFLAGS = $(ARCH)

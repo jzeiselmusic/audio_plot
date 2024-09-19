@@ -24,7 +24,6 @@ all: $(TARGET)
 
 # Build target
 $(TARGET): $(SRC)
-	cp ../CSoundLib/inc/csoundlib.h ./csoundlib.h
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
 	install_name_tool -add_rpath /usr/local/lib ./out
 

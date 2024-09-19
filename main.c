@@ -1,7 +1,7 @@
-#include "raylib.h"
+#include <raylib.h>
 #include <math.h>
 #include <string.h>
-#include "csoundlib.h"
+#include <csoundlib.h>
 #include <stdio.h>
 
 /* each segment of plot is (PLOT_WIDTH) / (SEGMENT_WIDTH * MAX_VALUES) */

@@ -17,7 +17,7 @@ LIBS = -lraylib -lcsoundlib
 CFLAGS = $(ARCH)
 
 # Linker flags
-LDFLAGS = $(LIBS) -Wl,-rpath,/usr/local/lib
+LDFLAGS = $(LIBS) -rpath /usr/local/lib
 
 # Default target
 all: $(TARGET)

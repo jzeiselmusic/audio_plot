@@ -11,13 +11,13 @@ SRC = main.c
 TARGET = out
 
 # Library directories and libraries
-LIBS = -L/usr/local/lib -lraylib /usr/local/lib/libcsoundlib.dylib
+LIBS = -lraylib -lcsoundlib
 
 # Compiler flags
 CFLAGS = $(ARCH)
 
 # Linker flags
-LDFLAGS = $(LIBS)
+LDFLAGS = $(LIBS) -Wl,-rpath,/usr/local/lib
 
 # Default target
 all: $(TARGET)

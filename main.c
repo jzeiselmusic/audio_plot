@@ -59,15 +59,15 @@ Color get_color_from_fft_value(double val, Color default_color)
 void master_output_vu(int trackId,
         unsigned char* input_buffer, 
         size_t len, 
-        CSL_DTYPE data_type, 
-        CSL_SR sample_rate,
+        CslDataType data_type, 
+        CslSampleRate sample_rate,
         size_t num_channels) 
 {
     float f_buffer[15000];
     double d_buffer[15000];
     double fftc_buffer[15000];
     double fftr_buffer[15000];
-    int samps = byte_buffer_to_float_buffer(input_buffer, f_buffer, len, 15000, data_type);
+    int samps = byte_buffer_to_float_buffer(input_buffer, f_buffer, len, 15000, data_type, false);
     float new_rms = 0.0;
     for (int i = 0; i < samps; i++) 
     {
@@ -90,14 +90,7 @@ void master_output_vu(int trackId,
 void start_sound(int microphone_latency)
 {
     int ret;
-    ret = soundlib_start_session(SR48000, CSL_S32);
-    int ind = soundlib_get_default_input_device_index();
-
-    ret = soundlib_start_input_stream(ind, microphone_latency);
-
-    int oind = soundlib_get_default_output_device_index();
-
-    ret = soundlib_start_output_stream(oind, microphone_latency);
+    ret = soundlib_start_session(CSL_SR48000, CSL_S32, CSL_REALTIME, microphone_latency);
 
     soundlib_set_master_volume(-100.0);
 
